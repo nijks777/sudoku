@@ -27,6 +27,7 @@ function MultiplayerGameContent() {
   const roomCode = searchParams.get('roomCode');
   const playerName = searchParams.get('name');
   const difficulty = searchParams.get('difficulty');
+  const puzzleIdFromUrl = searchParams.get('puzzleId');
 
   const {
     isConnected,
@@ -55,22 +56,34 @@ function MultiplayerGameContent() {
   const [saving, setSaving] = useState(false);
   const [myProgress, setMyProgress] = useState(0);
 
-  // Fetch puzzle on mount using the puzzleId from the room
+  // Fetch puzzle on mount using the puzzleId from URL or room
   useEffect(() => {
-    if (room?.puzzleId) {
-      fetchPuzzleById(room.puzzleId);
-    }
-  }, [room?.puzzleId]);
+    const puzzleId = puzzleIdFromUrl || room?.puzzleId;
+    console.log('Puzzle ID from URL:', puzzleIdFromUrl);
+    console.log('Puzzle ID from room:', room?.puzzleId);
+    console.log('Using puzzle ID:', puzzleId);
 
-  // Timer
+    if (puzzleId) {
+      fetchPuzzleById(puzzleId);
+    }
+  }, [puzzleIdFromUrl, room?.puzzleId]);
+
+  // Timer - start when puzzle is loaded or when game status is playing
   useEffect(() => {
-    if (!room?.isPaused && !isComplete && room?.status === 'playing') {
+    console.log('Timer effect - isPaused:', room?.isPaused, 'isComplete:', isComplete, 'status:', room?.status, 'puzzleData:', !!puzzleData);
+
+    // Start timer if puzzle is loaded and game is not complete and not paused
+    if (puzzleData && !isComplete && !room?.isPaused) {
+      console.log('Starting timer...');
       const timer = setInterval(() => {
         setTimeSeconds((prev) => prev + 1);
       }, 1000);
-      return () => clearInterval(timer);
+      return () => {
+        console.log('Clearing timer');
+        clearInterval(timer);
+      };
     }
-  }, [room?.isPaused, isComplete, room?.status]);
+  }, [room?.isPaused, isComplete, puzzleData]);
 
   // Update progress whenever grid changes
   useEffect(() => {
@@ -366,50 +379,50 @@ function MultiplayerGameContent() {
       </video>
 
       {/* Content */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center gap-6 px-4 py-8">
-        {/* Top Bar */}
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center gap-3 px-4 py-4">
+        {/* Top Bar - Compact */}
         <div className="flex w-full max-w-6xl items-center justify-between">
           {!isComplete && (
             <button
               onClick={handleLeave}
-              className="cursor-pointer rounded-full border-2 border-orange-500/60 bg-orange-100/90 px-6 py-2 font-semibold text-orange-800 backdrop-blur-sm transition-all hover:border-orange-600 hover:bg-orange-200 hover:shadow-lg"
+              className="cursor-pointer rounded-full border-2 border-orange-500/60 bg-orange-100/90 px-4 py-1.5 text-sm font-semibold text-orange-800 backdrop-blur-sm transition-all hover:border-orange-600 hover:bg-orange-200 hover:shadow-lg"
             >
               ← Exit
             </button>
           )}
           {isComplete && <div></div>}
 
-          <div className="flex gap-4">
-            <div className="rounded-full border-2 border-orange-500/60 bg-orange-100/90 px-6 py-2 font-semibold text-orange-800 backdrop-blur-sm">
+          <div className="flex gap-2">
+            <div className="rounded-full border-2 border-orange-500/60 bg-orange-100/90 px-3 py-1 text-sm font-semibold text-orange-800 backdrop-blur-sm">
               🏠 {roomCode}
             </div>
             <div
-              className={`rounded-full border-2 border-orange-500/60 px-6 py-2 font-semibold backdrop-blur-sm ${
+              className={`rounded-full border-2 border-orange-500/60 px-3 py-1 text-sm font-semibold backdrop-blur-sm ${
                 isConnected ? 'bg-green-100/90 text-green-800' : 'bg-red-100/90 text-red-800'
               }`}
             >
-              {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+              {isConnected ? '🟢' : '🔴'}
             </div>
           </div>
         </div>
 
-        {/* Players Progress Bar */}
-        <div className="w-full max-w-6xl rounded-2xl border-4 border-purple-400/60 bg-linear-to-br from-purple-50/95 via-pink-50/95 to-purple-100/95 p-6 shadow-2xl backdrop-blur-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="text-lg font-bold text-purple-900">
-              👤 You: {playerName}
+        {/* Players Progress Bar - More Compact */}
+        <div className="w-full max-w-6xl rounded-xl border-2 border-purple-400/60 bg-linear-to-br from-purple-50/95 via-pink-50/95 to-purple-100/95 p-3 shadow-xl backdrop-blur-sm">
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <div className="font-bold text-purple-900">
+              👤 {playerName}
             </div>
-            <div className="text-lg font-bold text-purple-900">
+            <div className="font-bold text-purple-900">
               ⚔️ {getOpponentName()}
             </div>
           </div>
-          <div className="mb-2 flex gap-4">
+          <div className="flex gap-3">
             {/* Your Progress */}
             <div className="flex-1">
-              <div className="mb-1 text-sm font-semibold text-purple-700">
-                Your Progress: {myProgress}%
+              <div className="mb-1 text-xs font-semibold text-purple-700">
+                You: {myProgress}%
               </div>
-              <div className="h-6 overflow-hidden rounded-full bg-white">
+              <div className="h-4 overflow-hidden rounded-full bg-white">
                 <div
                   className="h-full bg-linear-to-r from-blue-500 to-blue-600 transition-all duration-300"
                   style={{ width: `${myProgress}%` }}
@@ -418,10 +431,10 @@ function MultiplayerGameContent() {
             </div>
             {/* Opponent Progress */}
             <div className="flex-1">
-              <div className="mb-1 text-sm font-semibold text-purple-700">
-                Opponent Progress: {opponentProgress}%
+              <div className="mb-1 text-xs font-semibold text-purple-700">
+                Opponent: {opponentProgress}%
               </div>
-              <div className="h-6 overflow-hidden rounded-full bg-white">
+              <div className="h-4 overflow-hidden rounded-full bg-white">
                 <div
                   className="h-full bg-linear-to-r from-red-500 to-red-600 transition-all duration-300"
                   style={{ width: `${opponentProgress}%` }}
@@ -431,74 +444,84 @@ function MultiplayerGameContent() {
           </div>
         </div>
 
-        {/* Game Stats */}
-        <div className="flex gap-4">
-          <div className="rounded-full border-2 border-orange-500/60 bg-orange-100/90 px-6 py-2 font-semibold text-orange-800 backdrop-blur-sm">
-            ⏱️ {formatTime(timeSeconds)}
-          </div>
-          <div className="rounded-full border-2 border-orange-500/60 bg-orange-100/90 px-6 py-2 font-semibold text-orange-800 backdrop-blur-sm">
-            ❌ {mistakes}
-          </div>
-        </div>
+        {/* Game Container - Grid with side stats */}
+        <div className="w-full max-w-6xl rounded-2xl border-3 border-orange-400/60 bg-linear-to-br from-orange-50/95 via-amber-50/95 to-orange-100/95 p-4 shadow-xl backdrop-blur-sm">
+          <div className="flex items-start justify-center gap-6">
+            {/* Sudoku Grid */}
+            <div>
+              <div className="inline-block rounded-lg bg-orange-400 p-1 shadow-lg">
+                <div
+                  className="grid gap-0 bg-white"
+                  style={{
+                    gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
+                  }}
+                >
+                  {grid.map((row, rowIndex) =>
+                    row.map((cell, colIndex) => {
+                      const isRightBorder = (colIndex + 1) % boxCols === 0;
+                      const isBottomBorder = (rowIndex + 1) % boxRows === 0;
+                      const isSelected =
+                        selectedCell?.row === rowIndex &&
+                        selectedCell?.col === colIndex;
 
-        {/* Pause Indicator */}
-        {room?.isPaused && (
-          <div className="rounded-2xl border-2 border-yellow-400 bg-yellow-100/90 px-8 py-4 backdrop-blur-sm">
-            <p className="text-lg font-bold text-yellow-800">⏸️ Game Paused</p>
-          </div>
-        )}
-
-        {/* Game Container */}
-        <div className="rounded-3xl border-4 border-orange-400/60 bg-linear-to-br from-orange-50/95 via-amber-50/95 to-orange-100/95 p-8 shadow-2xl backdrop-blur-sm">
-          {/* Sudoku Grid */}
-          <div className="mb-6 flex justify-center">
-            <div className="inline-block rounded-xl bg-orange-400 p-1 shadow-lg">
-              <div
-                className="grid gap-0 bg-white"
-                style={{
-                  gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-                }}
-              >
-                {grid.map((row, rowIndex) =>
-                  row.map((cell, colIndex) => {
-                    const isRightBorder = (colIndex + 1) % boxCols === 0;
-                    const isBottomBorder = (rowIndex + 1) % boxRows === 0;
-                    const isSelected =
-                      selectedCell?.row === rowIndex &&
-                      selectedCell?.col === colIndex;
-
-                    return (
-                      <button
-                        key={`${rowIndex}-${colIndex}`}
-                        onClick={() => handleCellClick(rowIndex, colIndex)}
-                        className={`
-                          flex aspect-square items-center justify-center font-bold transition-all
-                          border-r border-b border-gray-300
-                          ${gridSize === 4 ? 'h-16 w-16 text-2xl' : ''}
-                          ${gridSize === 6 ? 'h-14 w-14 text-xl' : ''}
-                          ${gridSize === 9 ? 'h-12 w-12 text-lg' : ''}
-                          ${isRightBorder && colIndex !== gridSize - 1 ? 'border-r-[3px] border-r-orange-500' : ''}
-                          ${isBottomBorder && rowIndex !== gridSize - 1 ? 'border-b-[3px] border-b-orange-500' : ''}
-                          ${colIndex === gridSize - 1 ? 'border-r-0' : ''}
-                          ${rowIndex === gridSize - 1 ? 'border-b-0' : ''}
-                          ${cell.isInitial ? 'bg-orange-100 text-orange-900 cursor-not-allowed' : 'bg-white hover:bg-orange-50'}
-                          ${isSelected ? 'bg-amber-200 ring-2 ring-inset ring-orange-500' : ''}
-                          ${!cell.isValid && cell.value !== 0 ? 'bg-red-100 text-red-600' : ''}
-                          ${cell.value === 0 ? 'text-transparent' : ''}
-                        `}
-                        disabled={cell.isInitial || isComplete || room?.isPaused}
-                      >
-                        {cell.value === 0 ? '·' : cell.value}
-                      </button>
-                    );
-                  })
-                )}
+                      return (
+                        <button
+                          key={`${rowIndex}-${colIndex}`}
+                          onClick={() => handleCellClick(rowIndex, colIndex)}
+                          className={`
+                            flex aspect-square items-center justify-center font-bold transition-all
+                            border-r border-b border-gray-300
+                            ${gridSize === 4 ? 'h-16 w-16 text-2xl' : ''}
+                            ${gridSize === 6 ? 'h-14 w-14 text-xl' : ''}
+                            ${gridSize === 9 ? 'h-12 w-12 text-lg' : ''}
+                            ${isRightBorder && colIndex !== gridSize - 1 ? 'border-r-[3px] border-r-orange-500' : ''}
+                            ${isBottomBorder && rowIndex !== gridSize - 1 ? 'border-b-[3px] border-b-orange-500' : ''}
+                            ${colIndex === gridSize - 1 ? 'border-r-0' : ''}
+                            ${rowIndex === gridSize - 1 ? 'border-b-0' : ''}
+                            ${cell.isInitial ? 'bg-orange-100 text-orange-900 cursor-not-allowed' : 'bg-white hover:bg-orange-50'}
+                            ${isSelected ? 'bg-amber-200 ring-2 ring-inset ring-orange-500' : ''}
+                            ${!cell.isValid && cell.value !== 0 ? 'bg-red-100 text-red-600' : ''}
+                            ${cell.value === 0 ? 'text-transparent' : ''}
+                          `}
+                          disabled={cell.isInitial || isComplete || room?.isPaused}
+                        >
+                          {cell.value === 0 ? '·' : cell.value}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
               </div>
+            </div>
+
+            {/* Side Stats */}
+            <div className="flex flex-col gap-3">
+              {/* Timer */}
+              <div className="rounded-xl border-2 border-blue-400/60 bg-linear-to-br from-blue-50/95 to-cyan-50/95 p-4 shadow-lg backdrop-blur-sm">
+                <div className="text-xs font-semibold text-blue-700 mb-1">TIME</div>
+                <div className="text-2xl font-bold text-blue-900">{formatTime(timeSeconds)}</div>
+              </div>
+
+              {/* Mistakes */}
+              <div className="rounded-xl border-2 border-red-400/60 bg-linear-to-br from-red-50/95 to-rose-50/95 p-4 shadow-lg backdrop-blur-sm">
+                <div className="text-xs font-semibold text-red-700 mb-1">MISTAKES</div>
+                <div className="text-2xl font-bold text-red-900">{mistakes}</div>
+              </div>
+
+              {/* Pause Indicator */}
+              {room?.isPaused && (
+                <div className="rounded-xl border-2 border-yellow-400/60 bg-linear-to-br from-yellow-50/95 to-amber-50/95 p-4 shadow-lg backdrop-blur-sm">
+                  <div className="text-center">
+                    <div className="text-2xl mb-1">⏸️</div>
+                    <div className="text-xs font-bold text-yellow-800">PAUSED</div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Number Input Buttons */}
-          <div className="mb-4 flex flex-wrap justify-center gap-3">
+          <div className="mt-4 mb-2 flex flex-wrap justify-center gap-2">
             {Array.from({ length: gridSize }, (_, i) => i + 1).map((num) => (
               <button
                 key={num}

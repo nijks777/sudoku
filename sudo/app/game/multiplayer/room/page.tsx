@@ -25,7 +25,6 @@ function RoomLobbyContent() {
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [mode, setMode] = useState<'select' | 'create' | 'join'>('select');
   const [roomCodeInput, setRoomCodeInput] = useState('');
-  const [isReady, setIsReady] = useState(false);
   const [puzzleId, setPuzzleId] = useState<string | null>(null);
 
   // Fetch puzzle when creating room
@@ -78,7 +77,13 @@ function RoomLobbyContent() {
       roomCode: room.roomCode,
       playerName: name,
     });
-    setIsReady(true);
+  };
+
+  // Check if current player is ready based on room data
+  const isCurrentPlayerReady = () => {
+    if (!room || !name) return false;
+    const isHost = room.host?.playerName === name;
+    return isHost ? room.host?.isReady : room.guest?.isReady;
   };
 
   const handleStartGame = () => {
@@ -96,8 +101,9 @@ function RoomLobbyContent() {
   // Navigate to game when started
   useEffect(() => {
     if (room?.status === 'playing') {
+      console.log('Game starting, room data:', room);
       router.push(
-        `/game/multiplayer/game?roomCode=${room.roomCode}&name=${encodeURIComponent(name || '')}&difficulty=${difficulty}`
+        `/game/multiplayer/game?roomCode=${room.roomCode}&name=${encodeURIComponent(name || '')}&difficulty=${difficulty}&puzzleId=${room.puzzleId}`
       );
     }
   }, [room?.status]);
@@ -352,7 +358,7 @@ function RoomLobbyContent() {
 
               {/* Action Buttons */}
               <div className="space-y-3">
-                {!isReady && (
+                {!isCurrentPlayerReady() && (
                   <button
                     onClick={handleReady}
                     className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 px-8 py-5 text-2xl font-bold text-white shadow-lg transition-all hover:scale-105 hover:from-green-600 hover:to-emerald-600"
