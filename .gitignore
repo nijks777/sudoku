@@ -1,0 +1,55 @@
+# Environment variables
+.env
+.env.local
+.env*.local
+*.env
+
+# Documentation files
+PROJECT_PLAN.md
+DESIGN_PATTERNS_USED.md
+LEADERBOARD_IMPLEMENTATION.md
+REDIS_IMPLEMENTATION.md
+REDIS_SCHEMA.md
+SWITCH_TO_UPSTASH.md
+UPSTASH_MIGRATION_COMPLETE.md
+
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Next.js
+.next/
+out/
+sudo/.next/
+sudo/out/
+
+# Production
+build/
+dist/
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS files
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Temporary files
+tmp/
+temp/

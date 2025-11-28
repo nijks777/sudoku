@@ -1,0 +1,39 @@
+{
+  "name": "sudo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "socket:dev": "cd ../socket-server && npm run dev",
+    "socket:start": "cd ../socket-server && npm start",
+    "dev:all": "concurrently \"npm run dev\" \"npm run socket:dev\"",
+    "test:generation": "tsx scripts/testGeneration.ts",
+    "seed": "tsx --env-file=.env.local scripts/seedPuzzles.ts",
+    "cache:warm": "tsx --env-file=.env.local scripts/warmCache.ts",
+    "cache:reload": "tsx --env-file=.env.local scripts/reloadCache.ts"
+  },
+  "dependencies": {
+    "@types/ioredis": "^4.28.10",
+    "dotenv": "^17.2.3",
+    "ioredis": "^5.8.2",
+    "mongoose": "^9.0.0",
+    "next": "16.0.5",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20.19.25",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
+    "tailwindcss": "^4",
+    "tsx": "^4.20.6",
+    "typescript": "^5"
+  }
+}
