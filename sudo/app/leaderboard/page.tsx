@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface LeaderboardEntry {
   rank: number;
@@ -147,16 +148,15 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-orange-50 to-orange-100 py-8 px-4">
+      {/* Home Button - Top Right */}
+      <Link
+        href="/"
+        className="absolute left-8 top-8 cursor-pointer rounded-full border-2 border-orange-500/60 bg-orange-100/90 px-6 py-2 font-semibold text-orange-800 backdrop-blur-sm transition-all hover:border-orange-600 hover:bg-orange-200 hover:shadow-lg"
+      >
+        ← Home
+      </Link>
       <div className="max-w-4xl mx-auto">
-        {/* Back to Home - Top Left */}
-        <div className="mb-6">
-          <button
-            onClick={() => router.push('/')}
-            className="bg-white text-orange-600 py-2 px-6 rounded-xl font-semibold hover:bg-orange-50 transition shadow-lg border-2 border-orange-600 cursor-pointer"
-          >
-            ← Back to Home
-          </button>
-        </div>
+
 
         {/* Header */}
         <div className="text-center mb-8">
