@@ -55,6 +55,10 @@ function MultiplayerGameContent() {
   const [points, setPoints] = useState(0);
   const [saving, setSaving] = useState(false);
   const [myProgress, setMyProgress] = useState(0);
+  const [hintMode, setHintMode] = useState(false);
+  const [isFrozen, setIsFrozen] = useState(false);
+  const [freezeTimeLeft, setFreezeTimeLeft] = useState(0);
+  const [opponentLeft, setOpponentLeft] = useState(false);
 
   // Fetch puzzle on mount using the puzzleId from URL or room
   useEffect(() => {
@@ -93,6 +97,33 @@ function MultiplayerGameContent() {
       updateProgress({ roomCode, playerName, progress });
     }
   }, [grid, puzzleData]);
+
+  // Freeze timer countdown
+  useEffect(() => {
+    if (isFrozen && freezeTimeLeft > 0) {
+      const timer = setInterval(() => {
+        setFreezeTimeLeft((prev) => {
+          if (prev <= 1) {
+            setIsFrozen(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [isFrozen, freezeTimeLeft]);
+
+  // Listen for socket error (which includes player left)
+  useEffect(() => {
+    if (socketError && socketError.includes('left')) {
+      setOpponentLeft(true);
+      // Mark current player as winner by default
+      if (!isComplete) {
+        setIsComplete(true);
+      }
+    }
+  }, [socketError, isComplete]);
 
   const fetchPuzzleById = async (puzzleId: string) => {
     try {
@@ -150,12 +181,42 @@ function MultiplayerGameContent() {
   };
 
   const handleCellClick = (row: number, col: number) => {
-    if (grid[row][col].isInitial || isComplete || room?.isPaused) return;
+    // If in hint mode, fill the cell with the correct value
+    if (hintMode) {
+      if (grid[row][col].isInitial || isComplete || room?.isPaused) {
+        setHintMode(false);
+        return;
+      }
+
+      if (!puzzleData) return;
+
+      // Fill the cell with the correct value from solution
+      const newGrid = [...grid];
+      newGrid[row][col] = {
+        value: puzzleData.solution[row][col],
+        isInitial: true, // Mark as initial so it can't be changed
+        isValid: true,
+        isSelected: false,
+      };
+
+      setGrid(newGrid);
+      setHintsUsed((prev) => prev + 1);
+      setHintMode(false);
+
+      // Activate 8-second freeze
+      setIsFrozen(true);
+      setFreezeTimeLeft(8);
+
+      checkCompletion(newGrid);
+      return;
+    }
+
+    if (grid[row][col].isInitial || isComplete || room?.isPaused || isFrozen) return;
     setSelectedCell({ row, col });
   };
 
   const handleNumberInput = (num: number) => {
-    if (!selectedCell || isComplete || room?.isPaused) return;
+    if (!selectedCell || isComplete || room?.isPaused || isFrozen) return;
 
     const { row, col } = selectedCell;
     if (grid[row][col].isInitial) return;
@@ -214,8 +275,8 @@ function MultiplayerGameContent() {
       }
 
       const mistakePenalty = mistakes;
-      const hintPenalty = hintsUsed * 2;
-      const finalPoints = Math.max(1, basePoints + timeBonus - mistakePenalty - hintPenalty);
+      // No hint penalty in multiplayer - freeze is the penalty
+      const finalPoints = Math.max(1, basePoints + timeBonus - mistakePenalty);
       setPoints(finalPoints);
 
       // Notify socket server of completion
@@ -227,54 +288,21 @@ function MultiplayerGameContent() {
         hintsUsed,
       });
 
-      // Save to database
-      try {
-        setSaving(true);
-        const response = await fetch('/api/game/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            playerName,
-            difficulty,
-            timeSeconds,
-            mistakes,
-            hintsUsed,
-            mode: 'multiplayer',
-            roomId: roomCode,
-            isWinner: true, // First to complete is winner
-          }),
-        });
-
-        if (!response.ok) {
-          console.error('Failed to save game');
-        }
-      } catch (error) {
-        console.error('Error saving game:', error);
-      } finally {
-        setSaving(false);
-      }
+      // Don't save multiplayer results to leaderboard
+      // Multiplayer results are saved to rooms collection instead
+      setSaving(false);
     }
   };
 
   const handleHint = () => {
-    if (!puzzleData || hintsUsed >= puzzleData.hints.length || room?.isPaused) return;
+    if (!puzzleData || hintsUsed >= 3 || room?.isPaused || isComplete || isFrozen) return;
 
-    const hint = puzzleData.hints[hintsUsed];
-    const newGrid = [...grid];
-    newGrid[hint.row][hint.col] = {
-      value: hint.value,
-      isInitial: true,
-      isValid: true,
-      isSelected: false,
-    };
-
-    setGrid(newGrid);
-    setHintsUsed((prev) => prev + 1);
-    checkCompletion(newGrid);
+    // Enable hint mode - user needs to click on a cell to fill it
+    setHintMode(true);
   };
 
   const handleClear = () => {
-    if (!selectedCell || isComplete || room?.isPaused) return;
+    if (!selectedCell || isComplete || room?.isPaused || isFrozen) return;
     handleNumberInput(0);
   };
 
@@ -517,6 +545,17 @@ function MultiplayerGameContent() {
                   </div>
                 </div>
               )}
+
+              {/* Freeze Indicator */}
+              {isFrozen && (
+                <div className="rounded-xl border-2 border-blue-400/60 bg-linear-to-br from-blue-50/95 to-cyan-50/95 p-4 shadow-lg backdrop-blur-sm animate-pulse">
+                  <div className="text-center">
+                    <div className="text-2xl mb-1">❄️</div>
+                    <div className="text-xs font-bold text-blue-800">FROZEN</div>
+                    <div className="text-lg font-bold text-blue-900">{freezeTimeLeft}s</div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -527,7 +566,7 @@ function MultiplayerGameContent() {
                 key={num}
                 onClick={() => handleNumberInput(num)}
                 className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-xl border-2 border-orange-400 bg-linear-to-br from-orange-100 to-amber-100 text-2xl font-bold text-orange-900 shadow-md transition-all hover:scale-110 hover:border-orange-500 hover:from-orange-200 hover:to-amber-200 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={isComplete || room?.isPaused}
+                disabled={isComplete || room?.isPaused || isFrozen}
               >
                 {num}
               </button>
@@ -535,7 +574,7 @@ function MultiplayerGameContent() {
             <button
               onClick={handleClear}
               className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-xl border-2 border-red-400 bg-linear-to-br from-red-100 to-rose-100 text-xl font-bold text-red-900 shadow-md transition-all hover:scale-110 hover:border-red-500 hover:from-red-200 hover:to-rose-200 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={isComplete || room?.isPaused}
+              disabled={isComplete || room?.isPaused || isFrozen}
             >
               ✕
             </button>
@@ -546,11 +585,15 @@ function MultiplayerGameContent() {
             <button
               onClick={handleHint}
               disabled={
-                hintsUsed >= puzzleData.hints.length || isComplete || room?.isPaused
+                hintsUsed >= 3 || isComplete || room?.isPaused || isFrozen
               }
-              className="cursor-pointer rounded-xl border-2 border-green-400 bg-linear-to-br from-green-100 to-emerald-100 px-6 py-3 font-bold text-green-900 shadow-md transition-all hover:scale-105 hover:border-green-500 hover:from-green-200 hover:to-emerald-200 disabled:cursor-not-allowed disabled:opacity-50"
+              className={`cursor-pointer rounded-xl border-2 px-6 py-3 font-bold shadow-md transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 ${
+                hintMode
+                  ? 'border-yellow-500 bg-linear-to-br from-yellow-200 to-amber-200 text-yellow-900 animate-pulse'
+                  : 'border-green-400 bg-linear-to-br from-green-100 to-emerald-100 text-green-900 hover:border-green-500 hover:from-green-200 hover:to-emerald-200'
+              }`}
             >
-              💡 Hint ({puzzleData.hints.length - hintsUsed} left)
+              💡 {hintMode ? 'Click a cell to fill' : `Hint (${3 - hintsUsed} left)`}
             </button>
           </div>
         </div>
@@ -559,38 +602,15 @@ function MultiplayerGameContent() {
         {isComplete && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
             <div className="max-w-lg rounded-3xl border-4 border-green-400 bg-linear-to-br from-green-50/95 via-emerald-50/95 to-green-100/95 p-8 text-center shadow-2xl sm:p-12">
-              <div className="mb-6 text-8xl">🏆</div>
+              <div className="mb-6 text-8xl">{opponentLeft ? '🎉' : '🏆'}</div>
               <h2 className="mb-2 text-4xl font-bold text-green-900">
                 Victory, {playerName}!
               </h2>
               <p className="mb-6 text-lg font-semibold text-green-700">
-                You completed the puzzle first and won!
+                {opponentLeft
+                  ? `Your opponent left the game. You win by default!`
+                  : 'You completed the puzzle first and won!'}
               </p>
-
-              {/* Points Display */}
-              <div className="mb-6 rounded-2xl border-2 border-green-500 bg-white p-6">
-                <div className="mb-4 text-6xl font-bold text-green-600">
-                  {points} pts
-                </div>
-                <div className="space-y-2 text-sm text-green-800">
-                  <div className="flex justify-between">
-                    <span>Base points ({difficulty}):</span>
-                    <span className="font-semibold">
-                      +{difficulty === 'easy' ? 5 : difficulty === 'medium' ? 10 : 20}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Mistakes penalty:</span>
-                    <span className="font-semibold text-red-600">-{mistakes}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Hints penalty:</span>
-                    <span className="font-semibold text-red-600">
-                      -{hintsUsed * 2}
-                    </span>
-                  </div>
-                </div>
-              </div>
 
               {/* Stats */}
               <div className="mb-6 grid grid-cols-3 gap-4 text-center">

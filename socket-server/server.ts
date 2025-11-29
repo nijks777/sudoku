@@ -1,9 +1,46 @@
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { config } from 'dotenv';
+import mongoose from 'mongoose';
 
 // Load environment variables
 config();
+
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI || '';
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => console.log('✅ MongoDB connected for socket server'))
+  .catch((err) => console.error('❌ MongoDB connection error:', err));
+
+// Import Room model (we'll create schema here since it's a separate server)
+const roomSchema = new mongoose.Schema({
+  roomCode: String,
+  hostName: String,
+  guestName: String,
+  difficulty: String,
+  gridSize: Number,
+  puzzleId: mongoose.Schema.Types.ObjectId,
+  status: String,
+  hostProgress: Number,
+  guestProgress: Number,
+  isPaused: Boolean,
+  pauseRequests: [String],
+  createdAt: Date,
+  expiresAt: Date,
+  winnerName: String,
+  winnerTime: Number,
+  winnerMistakes: Number,
+  winnerHints: Number,
+  loserName: String,
+  loserTime: Number,
+  loserMistakes: Number,
+  loserHints: Number,
+  completedAt: Date,
+  leftByPlayer: String,
+});
+
+const RoomModel = mongoose.models.Room || mongoose.model('Room', roomSchema);
 
 const httpServer = createServer();
 
@@ -228,7 +265,7 @@ io.on('connection', (socket: Socket) => {
   // Event: Game Complete
   socket.on(
     'gameComplete',
-    (data: {
+    async (data: {
       roomCode: string;
       playerName: string;
       timeSeconds: number;
@@ -241,6 +278,10 @@ io.on('connection', (socket: Socket) => {
 
       room.status = 'completed';
 
+      // Determine winner (first to complete) and loser
+      const winner = data.playerName;
+      const loser = room.host?.playerName === winner ? room.guest?.playerName : room.host?.playerName;
+
       // Determine winner (first to complete)
       const winnerData = {
         winner: data.playerName,
@@ -251,6 +292,26 @@ io.on('connection', (socket: Socket) => {
 
       io.to(data.roomCode).emit('gameEnded', winnerData);
 
+      // Save room result to MongoDB
+      try {
+        await RoomModel.findOneAndUpdate(
+          { roomCode: data.roomCode },
+          {
+            status: 'completed',
+            winnerName: winner,
+            winnerTime: data.timeSeconds,
+            winnerMistakes: data.mistakes,
+            winnerHints: data.hintsUsed,
+            loserName: loser,
+            completedAt: new Date(),
+          },
+          { upsert: true, new: true }
+        );
+        console.log(`✅ Room result saved to MongoDB: ${data.roomCode}`);
+      } catch (error) {
+        console.error('❌ Failed to save room result:', error);
+      }
+
       // Clean up room after 30 seconds
       setTimeout(() => {
         rooms.delete(data.roomCode);
@@ -260,27 +321,50 @@ io.on('connection', (socket: Socket) => {
   );
 
   // Event: Leave Room
-  socket.on('leaveRoom', (data: { roomCode: string; playerName: string }) => {
+  socket.on('leaveRoom', async (data: { roomCode: string; playerName: string }) => {
     const room = rooms.get(data.roomCode);
 
     if (!room) return;
 
+    console.log(`${data.playerName} left room: ${data.roomCode}`);
+
     // Notify other player
     socket.to(data.roomCode).emit('playerLeft', { playerName: data.playerName });
 
-    // Remove room if game hasn't started
-    if (room.status === 'waiting') {
+    // If game was in progress, save as abandoned
+    if (room.status === 'playing') {
+      const otherPlayer = room.host?.playerName === data.playerName ? room.guest?.playerName : room.host?.playerName;
+
+      try {
+        await RoomModel.findOneAndUpdate(
+          { roomCode: data.roomCode },
+          {
+            status: 'abandoned',
+            leftByPlayer: data.playerName,
+            winnerName: otherPlayer, // Other player wins by default
+            completedAt: new Date(),
+          },
+          { upsert: true, new: true }
+        );
+        console.log(`✅ Room abandoned and saved to MongoDB: ${data.roomCode}`);
+      } catch (error) {
+        console.error('❌ Failed to save abandoned room:', error);
+      }
+    }
+
+    // Remove room from memory
+    if (room.status === 'waiting' || room.status === 'playing') {
       rooms.delete(data.roomCode);
       console.log(`Room deleted (player left): ${data.roomCode}`);
     }
   });
 
   // Handle disconnect
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     console.log(`Client disconnected: ${socket.id}`);
 
     // Find and handle room cleanup
-    rooms.forEach((room, roomCode) => {
+    for (const [roomCode, room] of rooms.entries()) {
       if (room.host?.socketId === socket.id || room.guest?.socketId === socket.id) {
         const playerName =
           room.host?.socketId === socket.id ? room.host.playerName : room.guest?.playerName;
@@ -288,13 +372,34 @@ io.on('connection', (socket: Socket) => {
         // Notify other player
         socket.to(roomCode).emit('playerLeft', { playerName });
 
-        // Delete room if game not started
-        if (room.status === 'waiting' || room.status === 'ready') {
+        // If game was in progress, save as abandoned
+        if (room.status === 'playing') {
+          const otherPlayer = room.host?.socketId === socket.id ? room.guest?.playerName : room.host?.playerName;
+
+          try {
+            await RoomModel.findOneAndUpdate(
+              { roomCode },
+              {
+                status: 'abandoned',
+                leftByPlayer: playerName,
+                winnerName: otherPlayer,
+                completedAt: new Date(),
+              },
+              { upsert: true, new: true }
+            );
+            console.log(`✅ Room abandoned (disconnect) and saved: ${roomCode}`);
+          } catch (error) {
+            console.error('❌ Failed to save abandoned room:', error);
+          }
+        }
+
+        // Delete room if game not started or in progress
+        if (room.status === 'waiting' || room.status === 'ready' || room.status === 'playing') {
           rooms.delete(roomCode);
           console.log(`Room deleted (disconnect): ${roomCode}`);
         }
       }
-    });
+    }
   });
 });
 

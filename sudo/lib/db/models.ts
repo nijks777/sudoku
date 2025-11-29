@@ -131,13 +131,24 @@ export interface IRoom {
   difficulty: string;
   gridSize: number;
   puzzleId: mongoose.Types.ObjectId;
-  status: 'waiting' | 'playing' | 'completed';
+  status: 'waiting' | 'playing' | 'completed' | 'abandoned';
   hostProgress: number;
   guestProgress: number;
   isPaused: boolean;
   pauseRequests: string[];
   createdAt: Date;
   expiresAt: Date;
+  // Game result fields
+  winnerName?: string;
+  winnerTime?: number;
+  winnerMistakes?: number;
+  winnerHints?: number;
+  loserName?: string;
+  loserTime?: number;
+  loserMistakes?: number;
+  loserHints?: number;
+  completedAt?: Date;
+  leftByPlayer?: string; // Track who left the room
 }
 
 const roomSchema = new Schema<IRoom>({
@@ -172,7 +183,7 @@ const roomSchema = new Schema<IRoom>({
   },
   status: {
     type: String,
-    enum: ['waiting', 'playing', 'completed'],
+    enum: ['waiting', 'playing', 'completed', 'abandoned'],
     default: 'waiting',
   },
   hostProgress: {
@@ -202,6 +213,40 @@ const roomSchema = new Schema<IRoom>({
   expiresAt: {
     type: Date,
     required: true,
+  },
+  // Game result fields
+  winnerName: {
+    type: String,
+    trim: true,
+  },
+  winnerTime: {
+    type: Number,
+  },
+  winnerMistakes: {
+    type: Number,
+  },
+  winnerHints: {
+    type: Number,
+  },
+  loserName: {
+    type: String,
+    trim: true,
+  },
+  loserTime: {
+    type: Number,
+  },
+  loserMistakes: {
+    type: Number,
+  },
+  loserHints: {
+    type: Number,
+  },
+  completedAt: {
+    type: Date,
+  },
+  leftByPlayer: {
+    type: String,
+    trim: true,
   },
 });
 

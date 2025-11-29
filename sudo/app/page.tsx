@@ -23,7 +23,7 @@ export default function Home() {
       </video>
 
       {/* Content - Center Card */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 pb-20">
         {/* Center Container with Cream/Orange Theme */}
         <div className="max-w-4xl rounded-3xl border-4 border-orange-400/60 bg-linear-to-br from-orange-50/95 via-amber-50/95 to-orange-100/95 p-8 shadow-2xl backdrop-blur-sm sm:p-12 md:p-16">
           {/* Title */}

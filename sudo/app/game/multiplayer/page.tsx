@@ -23,7 +23,7 @@ export default function MultiplayerDifficultySelection() {
       </video>
 
       {/* Content - Center Card */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 ">
         {/* Back Button */}
         <Link
           href="/"

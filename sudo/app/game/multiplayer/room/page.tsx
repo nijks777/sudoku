@@ -168,7 +168,7 @@ function RoomLobbyContent() {
         </div>
 
         {/* Main Container */}
-        <div className="max-w-3xl rounded-3xl border-4 border-orange-400/60 bg-gradient-to-br from-orange-50/95 via-amber-50/95 to-orange-100/95 p-8 shadow-2xl backdrop-blur-sm sm:p-12">
+        <div className="max-w-3xl rounded-3xl border-4 border-orange-400/60 bg-linear-to-br from-orange-50/95 via-amber-50/95 to-orange-100/95 p-8 shadow-2xl backdrop-blur-sm sm:p-12">
           {/* Error Display */}
           {error && (
             <div className="mb-6 rounded-xl bg-red-100 p-4 text-center">
@@ -183,7 +183,7 @@ function RoomLobbyContent() {
                 <div className="space-y-6">
                   <div className="text-center">
                     <div className="mb-4 text-6xl">{diffInfo.emoji}</div>
-                    <h1 className="mb-2 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 bg-clip-text text-4xl font-bold text-transparent">
+                    <h1 className="mb-2 bg-linear-to-r from-orange-600 via-orange-500 to-amber-600 bg-clip-text text-4xl font-bold text-transparent">
                       {diffInfo.label} {diffInfo.size}
                     </h1>
                     <p className="text-lg font-semibold text-orange-700">
@@ -194,14 +194,14 @@ function RoomLobbyContent() {
                   <div className="space-y-4">
                     <button
                       onClick={() => setMode('create')}
-                      className="w-full cursor-pointer rounded-2xl border-3 border-green-500/70 bg-gradient-to-br from-green-100 to-emerald-100 px-8 py-6 text-xl font-bold text-green-900 shadow-lg transition-all hover:scale-105 hover:from-green-200 hover:to-emerald-200"
+                      className="w-full cursor-pointer rounded-2xl border-3 border-green-500/70 bg-linear-to-br from-green-100 to-emerald-100 px-8 py-6 text-xl font-bold text-green-900 shadow-lg transition-all hover:scale-105 hover:from-green-200 hover:to-emerald-200"
                     >
                       🎮 Create New Room
                     </button>
 
                     <button
                       onClick={() => setMode('join')}
-                      className="w-full cursor-pointer rounded-2xl border-3 border-blue-500/70 bg-gradient-to-br from-blue-100 to-cyan-100 px-8 py-6 text-xl font-bold text-blue-900 shadow-lg transition-all hover:scale-105 hover:from-blue-200 hover:to-cyan-200"
+                      className="w-full cursor-pointer rounded-2xl border-3 border-blue-500/70 bg-linear-to-br from-blue-100 to-cyan-100 px-8 py-6 text-xl font-bold text-blue-900 shadow-lg transition-all hover:scale-105 hover:from-blue-200 hover:to-cyan-200"
                     >
                       🔗 Join Existing Room
                     </button>
@@ -261,7 +261,7 @@ function RoomLobbyContent() {
                   <button
                     onClick={handleJoinRoom}
                     disabled={!isConnected || roomCodeInput.length !== 6}
-                    className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 px-8 py-5 text-2xl font-bold text-white shadow-lg transition-all hover:scale-105 hover:from-blue-600 hover:to-cyan-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full cursor-pointer rounded-2xl bg-linear-to-r from-blue-500 to-cyan-500 px-8 py-5 text-2xl font-bold text-white shadow-lg transition-all hover:scale-105 hover:from-blue-600 hover:to-cyan-600 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     🔗 Join Room
                   </button>
@@ -281,7 +281,7 @@ function RoomLobbyContent() {
           {room && (
             <div className="space-y-6">
               {/* Room Code Display */}
-              <div className="rounded-2xl bg-gradient-to-r from-purple-100 to-pink-100 p-6 text-center">
+              <div className="rounded-2xl bg-linear-to-r from-purple-100 to-pink-100 p-6 text-center">
                 <p className="mb-2 text-sm font-semibold text-purple-700">ROOM CODE</p>
                 <p className="mb-3 text-5xl font-bold tracking-widest text-purple-900">
                   {room.roomCode}
@@ -361,7 +361,7 @@ function RoomLobbyContent() {
                 {!isCurrentPlayerReady() && (
                   <button
                     onClick={handleReady}
-                    className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 px-8 py-5 text-2xl font-bold text-white shadow-lg transition-all hover:scale-105 hover:from-green-600 hover:to-emerald-600"
+                    className="w-full cursor-pointer rounded-2xl bg-linear-to-r from-green-500 to-emerald-500 px-8 py-5 text-2xl font-bold text-white shadow-lg transition-all hover:scale-105 hover:from-green-600 hover:to-emerald-600"
                   >
                     ✓ I'm Ready!
                   </button>
@@ -370,7 +370,7 @@ function RoomLobbyContent() {
                 {canStartGame && (
                   <button
                     onClick={handleStartGame}
-                    className="w-full cursor-pointer animate-pulse rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 px-8 py-5 text-2xl font-bold text-white shadow-lg transition-all hover:scale-105"
+                    className="w-full cursor-pointer animate-pulse rounded-2xl bg-linear-to-r from-purple-500 to-pink-500 px-8 py-5 text-2xl font-bold text-white shadow-lg transition-all hover:scale-105"
                   >
                     🚀 Start Game!
                   </button>

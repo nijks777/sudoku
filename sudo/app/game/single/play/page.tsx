@@ -81,11 +81,11 @@ function NameInputContent() {
         </Link>
 
         {/* Center Container */}
-        <div className="max-w-2xl rounded-3xl border-4 border-orange-400/60 bg-gradient-to-br from-orange-50/95 via-amber-50/95 to-orange-100/95 p-8 shadow-2xl backdrop-blur-sm sm:p-12 md:p-16">
+        <div className="max-w-2xl rounded-3xl border-4 border-orange-400/60 bg-linear-to-br from-orange-50/95 via-amber-50/95 to-orange-100/95 p-8 shadow-2xl backdrop-blur-sm sm:p-12 md:p-16">
           {/* Title */}
           <div className="mb-8 text-center">
             <div className="mb-4 text-7xl">{diffInfo.emoji}</div>
-            <h1 className="mb-2 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 bg-clip-text text-4xl font-bold tracking-tight text-transparent drop-shadow-lg sm:text-5xl">
+            <h1 className="mb-2 bg-linear-to-r from-orange-600 via-orange-500 to-amber-600 bg-clip-text text-4xl font-bold tracking-tight text-transparent drop-shadow-lg sm:text-5xl">
               {diffInfo.label} Mode
             </h1>
             <p className="text-lg font-semibold text-orange-700">
@@ -126,7 +126,7 @@ function NameInputContent() {
             {/* Start Button */}
             <button
               type="submit"
-              className="w-full cursor-pointer rounded-2xl border-3 border-orange-500/70 bg-gradient-to-br from-orange-100 to-amber-100 px-8 py-5 text-2xl font-bold text-orange-900 shadow-lg transition-all duration-300 hover:scale-105 hover:border-orange-600 hover:from-orange-200 hover:to-amber-200 hover:shadow-2xl hover:shadow-orange-400/50"
+              className="w-full cursor-pointer rounded-2xl border-3 border-orange-500/70 bg-linear-to-br from-orange-100 to-amber-100 px-8 py-5 text-2xl font-bold text-orange-900 shadow-lg transition-all duration-300 hover:scale-105 hover:border-orange-600 hover:from-orange-200 hover:to-amber-200 hover:shadow-2xl hover:shadow-orange-400/50"
             >
               Start Game 🎮
             </button>

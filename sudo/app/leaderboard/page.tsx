@@ -148,6 +148,16 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen bg-linear-to-br from-orange-50 to-orange-100 py-8 px-4">
       <div className="max-w-4xl mx-auto">
+        {/* Back to Home - Top Left */}
+        <div className="mb-6">
+          <button
+            onClick={() => router.push('/')}
+            className="bg-white text-orange-600 py-2 px-6 rounded-xl font-semibold hover:bg-orange-50 transition shadow-lg border-2 border-orange-600 cursor-pointer"
+          >
+            ← Back to Home
+          </button>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-5xl font-bold text-orange-800 mb-4">
@@ -324,15 +334,6 @@ export default function LeaderboardPage() {
           )}
         </div>
 
-        {/* Back to Home */}
-        <div className="text-center mt-8">
-          <button
-            onClick={() => router.push('/')}
-            className="bg-white text-orange-600 py-3 px-8 rounded-xl font-semibold hover:bg-orange-50 transition shadow-lg border-2 border-orange-600 cursor-pointer"
-          >
-            ← Back to Home
-          </button>
-        </div>
       </div>
     </div>
   );

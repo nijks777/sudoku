@@ -42,6 +42,7 @@ function SudokuGameContent() {
   const [isPaused, setIsPaused] = useState(false);
   const [points, setPoints] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [hintMode, setHintMode] = useState(false);
 
   // Fetch puzzle on mount
   useEffect(() => {
@@ -89,6 +90,31 @@ function SudokuGameContent() {
   };
 
   const handleCellClick = (row: number, col: number) => {
+    // If in hint mode, fill the cell with the correct value
+    if (hintMode) {
+      if (grid[row][col].isInitial || isComplete || isPaused) {
+        setHintMode(false);
+        return;
+      }
+
+      if (!puzzleData) return;
+
+      // Fill the cell with the correct value from solution
+      const newGrid = [...grid];
+      newGrid[row][col] = {
+        value: puzzleData.solution[row][col],
+        isInitial: true, // Mark as initial so it can't be changed
+        isValid: true,
+        isSelected: false,
+      };
+
+      setGrid(newGrid);
+      setHintsUsed((prev) => prev + 1);
+      setHintMode(false);
+      checkCompletion(newGrid);
+      return;
+    }
+
     if (grid[row][col].isInitial || isComplete || isPaused) return;
     setSelectedCell({ row, col });
   };
@@ -188,20 +214,10 @@ function SudokuGameContent() {
   };
 
   const handleHint = () => {
-    if (!puzzleData || hintsUsed >= puzzleData.hints.length || isPaused) return;
+    if (!puzzleData || hintsUsed >= 3 || isPaused || isComplete) return;
 
-    const hint = puzzleData.hints[hintsUsed];
-    const newGrid = [...grid];
-    newGrid[hint.row][hint.col] = {
-      value: hint.value,
-      isInitial: true,
-      isValid: true,
-      isSelected: false,
-    };
-
-    setGrid(newGrid);
-    setHintsUsed((prev) => prev + 1);
-    checkCompletion(newGrid);
+    // Enable hint mode - user needs to click on a cell to fill it
+    setHintMode(true);
   };
 
   const handleClear = () => {
@@ -395,11 +411,15 @@ function SudokuGameContent() {
             <button
               onClick={handleHint}
               disabled={
-                hintsUsed >= puzzleData.hints.length || isComplete || isPaused
+                hintsUsed >= 3 || isComplete || isPaused
               }
-              className="cursor-pointer rounded-xl border-2 border-green-400 bg-linear-to-br from-green-100 to-emerald-100 px-6 py-3 font-bold text-green-900 shadow-md transition-all hover:scale-105 hover:border-green-500 hover:from-green-200 hover:to-emerald-200 disabled:cursor-not-allowed disabled:opacity-50"
+              className={`cursor-pointer rounded-xl border-2 px-6 py-3 font-bold shadow-md transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 ${
+                hintMode
+                  ? 'border-yellow-500 bg-linear-to-br from-yellow-200 to-amber-200 text-yellow-900 animate-pulse'
+                  : 'border-green-400 bg-linear-to-br from-green-100 to-emerald-100 text-green-900 hover:border-green-500 hover:from-green-200 hover:to-emerald-200'
+              }`}
             >
-              💡 Hint ({puzzleData.hints.length - hintsUsed} left)
+              💡 {hintMode ? 'Click a cell to fill' : `Hint (${3 - hintsUsed} left)`}
             </button>
             <button
               onClick={() => setIsPaused(!isPaused)}
@@ -438,7 +458,11 @@ function SudokuGameContent() {
                   <div className="flex justify-between">
                     <span>Time bonus:</span>
                     <span className="font-semibold">
-                      +{Math.max(0, 10 - Math.floor(timeSeconds / 60))}
+                      +{difficulty === 'easy'
+                        ? Math.max(0, 5 - Math.floor(timeSeconds / 30))
+                        : difficulty === 'medium'
+                        ? Math.max(0, 6 - Math.floor(timeSeconds / 45))
+                        : Math.max(0, 10 - Math.floor(timeSeconds / 60))}
                     </span>
                   </div>
                   <div className="flex justify-between">
