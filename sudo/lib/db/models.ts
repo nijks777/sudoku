@@ -250,8 +250,7 @@ const roomSchema = new Schema<IRoom>({
   },
 });
 
-// Create index for room code lookups
-roomSchema.index({ roomCode: 1 });
+// Create index for expiry cleanup (roomCode index is auto-created by unique: true)
 roomSchema.index({ expiresAt: 1 }); // For TTL cleanup
 
 // ==================== Export Models ====================

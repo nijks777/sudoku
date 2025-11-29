@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: sudoku-socket-server
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: NEXT_PUBLIC_CLIENT_URL
+        sync: false
+      - key: SOCKET_PORT
+        value: 10000
