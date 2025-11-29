@@ -118,12 +118,9 @@ function MultiplayerGameContent() {
   useEffect(() => {
     if (socketError && socketError.includes('left')) {
       setOpponentLeft(true);
-      // Mark current player as winner by default
-      if (!isComplete) {
-        setIsComplete(true);
-      }
+      // Don't auto-complete - let player continue playing
     }
-  }, [socketError, isComplete]);
+  }, [socketError]);
 
   const fetchPuzzleById = async (puzzleId: string) => {
     try {
@@ -662,6 +659,21 @@ function MultiplayerGameContent() {
                     View Leaderboard
                   </button>
                 </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Opponent Left Notification - Allow Continue Playing */}
+        {opponentLeft && !isComplete && (
+          <div className="fixed top-4 left-1/2 z-40 -translate-x-1/2 transform">
+            <div className="rounded-2xl border-3 border-yellow-400 bg-linear-to-br from-yellow-50/98 via-amber-50/98 to-yellow-100/98 p-6 shadow-2xl backdrop-blur-sm">
+              <div className="flex items-center gap-3">
+                <div className="text-4xl">⚠️</div>
+                <div>
+                  <p className="font-bold text-yellow-900">Opponent Left</p>
+                  <p className="text-sm text-yellow-700">You can continue playing or exit</p>
+                </div>
               </div>
             </div>
           </div>

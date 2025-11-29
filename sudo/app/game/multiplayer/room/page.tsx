@@ -26,6 +26,7 @@ function RoomLobbyContent() {
   const [mode, setMode] = useState<'select' | 'create' | 'join'>('select');
   const [roomCodeInput, setRoomCodeInput] = useState('');
   const [puzzleId, setPuzzleId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Fetch puzzle when creating room
   useEffect(() => {
@@ -96,6 +97,18 @@ function RoomLobbyContent() {
       leaveRoom({ roomCode: room.roomCode, playerName: name });
     }
     router.push('/game/multiplayer');
+  };
+
+  const handleCopyRoomCode = async () => {
+    if (!room) return;
+
+    try {
+      await navigator.clipboard.writeText(room.roomCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy room code:', err);
+    }
   };
 
   // Navigate to game when started
@@ -283,9 +296,18 @@ function RoomLobbyContent() {
               {/* Room Code Display */}
               <div className="rounded-2xl bg-linear-to-r from-purple-100 to-pink-100 p-6 text-center">
                 <p className="mb-2 text-sm font-semibold text-purple-700">ROOM CODE</p>
-                <p className="mb-3 text-5xl font-bold tracking-widest text-purple-900">
-                  {room.roomCode}
-                </p>
+                <div className="mb-3 flex items-center justify-center gap-3">
+                  <p className="text-5xl font-bold tracking-widest text-purple-900">
+                    {room.roomCode}
+                  </p>
+                  <button
+                    onClick={handleCopyRoomCode}
+                    className="cursor-pointer rounded-xl border-2 border-purple-400 bg-white px-4 py-2 font-semibold text-purple-800 transition-all hover:bg-purple-50 hover:shadow-md"
+                    title="Copy room code"
+                  >
+                    {copied ? '✓ Copied!' : '📋 Copy'}
+                  </button>
+                </div>
                 <p className="text-sm text-purple-600">Share this code with your opponent</p>
               </div>
 
@@ -358,13 +380,29 @@ function RoomLobbyContent() {
 
               {/* Action Buttons */}
               <div className="space-y-3">
-                {!isCurrentPlayerReady() && (
+                {!isCurrentPlayerReady() && room.guest && (
                   <button
                     onClick={handleReady}
                     className="w-full cursor-pointer rounded-2xl bg-linear-to-r from-green-500 to-emerald-500 px-8 py-5 text-2xl font-bold text-white shadow-lg transition-all hover:scale-105 hover:from-green-600 hover:to-emerald-600"
                   >
                     ✓ I'm Ready!
                   </button>
+                )}
+
+                {!isCurrentPlayerReady() && !room.guest && (
+                  <div className="rounded-xl bg-orange-100 p-4 text-center">
+                    <p className="font-semibold text-orange-800">
+                      ⏳ Waiting for opponent to join...
+                    </p>
+                  </div>
+                )}
+
+                {isCurrentPlayerReady() && room.status !== 'ready' && (
+                  <div className="rounded-xl bg-green-100 p-4 text-center">
+                    <p className="font-semibold text-green-800">
+                      ✓ You're ready! Waiting for opponent...
+                    </p>
+                  </div>
                 )}
 
                 {canStartGame && (
