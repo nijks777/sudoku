@@ -149,7 +149,7 @@ This project implements **11 professional design patterns**:
 10. **MVC Pattern** - Model-View-Controller architecture
 11. **Layered Architecture** - Clear separation of concerns
 
-📖 **Detailed Documentation**: See [DESIGN_PATTERNS_USED.md](DESIGN_PATTERNS_USED.md)
+
 
 ---
 
